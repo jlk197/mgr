@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import QuestionBlock from "../components/QuestionBlock";
 import { getSurveyAnswers, saveDemographicsAnswers } from "../utils/surveyStorage";
+import { configs } from "../ParamsConfig";
 
 export default function Demographics() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ export default function Demographics() {
   return (
     <div className="container py-5">
       <div className="mb-3 text-center">
-        <small className="text-muted">Krok 1/3</small>
+        <small className="text-muted">Krok 1/{configs.length + 1}</small>
       </div>
 
       <h2 className="mb-4 text-center">Pytania wstępne</h2>

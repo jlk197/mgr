@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+
+# Firebase
+scripts/serviceAccountKey.json
+scripts/survey_data.json
+scripts/survey_data.csv
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

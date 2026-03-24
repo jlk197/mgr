@@ -1,5 +1,15 @@
 const STORAGE_KEY = 'survey_answers';
 
+export type MetricAnswers = {
+  speed: string;
+  smoothness: string;
+  irritation: string;
+};
+
+export type ConfigAnswers = {
+  [key: string]: MetricAnswers; // key format: "FCP_fast", "LCP_medium", etc.
+};
+
 export type SurveyAnswers = {
   demographics: {
     age: string;
@@ -7,15 +17,7 @@ export type SurveyAnswers = {
     frequency: string;
     device: string;
   };
-  metrics: {
-    inp: string;
-    lcp: string;
-    fcp: string;
-    cls: string;
-    cls2: string;
-    tbt: string;
-    tti: string;
-  };
+  configAnswers: ConfigAnswers;
   comparison: {
     lcp_fcp: string;
     tti_inp: string;
@@ -34,15 +36,7 @@ const defaultAnswers: SurveyAnswers = {
     frequency: "",
     device: ""
   },
-  metrics: {
-    inp: "",
-    lcp: "",
-    fcp: "",
-    cls: "",
-    cls2: "",
-    tbt: "",
-    tti: ""
-  },
+  configAnswers: {},
   comparison: {
     lcp_fcp: "",
     tti_inp: "",
@@ -72,9 +66,9 @@ export const saveDemographicsAnswers = (answers: SurveyAnswers['demographics']) 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
 };
 
-export const saveMetricsAnswers = (answers: SurveyAnswers['metrics']) => {
+export const saveConfigAnswers = (configKey: string, answers: MetricAnswers) => {
   const current = getSurveyAnswers();
-  current.metrics = answers;
+  current.configAnswers[configKey] = answers;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
 };
 
