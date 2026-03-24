@@ -1,38 +1,30 @@
 import React from "react";
-import type { ButtonId, TestConfig } from "../ParamsConfig";
+import type {TestConfig } from "../ParamsConfig";
 
 
 type ButtonsProps = {
-  configs: Record<ButtonId, TestConfig>;
+  config: TestConfig;
 };
 
-const Buttons: React.FC<ButtonsProps> = ({ configs  }) => {
-  const handleClick = (buttonId: ButtonId) => {
-    const { fcp, lcp, cls, tbt, tti, inp, impactFraction, distanceFraction } = configs[buttonId];
+const Buttons: React.FC<ButtonsProps> = ({ config }) => {
+  const handleClick = () => {
+    const { fcp, lcp, cls, tbt, tti, inp } = config;
 
     const url =
       `${window.location.origin}/testpage` +
-      `?fcp=${fcp}&lcp=${lcp}&cls=${cls ? 1 : 0}&tbt=${tbt}&tti=${tti}&inp=${inp}&impactFraction=${impactFraction}&distanceFraction=${distanceFraction}`;
+      `?fcp=${fcp}&lcp=${lcp}&cls=${cls}&tbt=${tbt}&tti=${tti}&inp=${inp}`;
     window.open(url, "_blank");
   };
 
   return (
     <div className="d-flex flex-wrap justify-content-center my-4 gap-3">
-      {(Object.keys(configs) as string[]).map((key) => {
-        const id = Number(key) as ButtonId;
-        return (
           <button
-            key={id}
-            className={`btn ${
-              ["btn-danger", "btn-success", "btn-primary", "btn-warning", "btn-info"][id - 1]
-            } flex-fill`}
+            className={`btn btn-info flex-fill`}
             style={{ minWidth: "120px" }}
-            onClick={() => handleClick(id)}
+            onClick={() => handleClick()}
           >
-            Test {id}
+            Otwórz stronę testową
           </button>
-        );
-      })}
     </div>
   );
 };

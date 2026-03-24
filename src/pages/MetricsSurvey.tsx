@@ -2,28 +2,34 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import QuestionBlock from "../components/QuestionBlock";
-import ButtonsWithDelayedAction from "../components/ButtonsWithDelayedAction";
 import Buttons from "../components/Buttons";
-import { cls2Configs, clsConfigs, fcpConfigs, lcpConfigs, tbtConfigs, ttiConfigs } from "../ParamsConfig";
-import { getSurveyAnswers, saveMetricsAnswers } from "../utils/surveyStorage";
+import { configs } from "../ParamsConfig";
+import { getSurveyAnswers, saveConfigAnswers } from "../utils/surveyStorage";
+import { submitSurveyToFirebase } from "../firebase/surveyService";
 
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 export default function MetricsSurvey() {
   const navigate = useNavigate();
+  const [currentConfigIndex, setCurrentConfigIndex] = useState(0);
+  const [shuffledConfigs, _] = useState(() => shuffleArray(configs));
   const [answers, setAnswers] = useState({
-    inp: "",
-    lcp: "",
-    fcp: "",
-    cls: "",
-    cls2: "",
-    tbt: "",
-    tti: ""
+    speed: "",
+    smoothness: "",
+    irritation: ""
   });
 
+  // Przewiń do góry strony przy każdej zmianie konfiguracji
   useEffect(() => {
-    const savedAnswers = getSurveyAnswers();
-    setAnswers(savedAnswers.metrics);
-  }, []);
+    window.scrollTo(0, 0);
+  }, [currentConfigIndex]);
 
   const handleAnswerChange = (name: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [name]: value }));
@@ -31,84 +37,89 @@ export default function MetricsSurvey() {
 
   const allAnswered = Object.values(answers).every((ans) => ans !== "");
 
+  const handleNext = async () => {
+    const currentConfig = shuffledConfigs[currentConfigIndex];
+    const configKey = `${currentConfig.metricType}_${currentConfig.speedLevel}`;
+
+    saveConfigAnswers(configKey, answers);
+
+    if (currentConfigIndex < shuffledConfigs.length - 1) {
+      setCurrentConfigIndex(currentConfigIndex + 1);
+      setAnswers({
+        speed: "",
+        smoothness: "",
+        irritation: ""
+      });
+    } else {
+      try {
+        const surveyData = getSurveyAnswers();
+        await submitSurveyToFirebase(surveyData);
+        navigate("/dziekuje");
+      } catch (error) {
+        console.error("Error submitting survey:", error);
+        alert("Wystąpił błąd podczas wysyłania ankiety. Spróbuj ponownie.");
+      }
+    }
+  };
+
   return (
     <div className="container py-5">
       <div className="mb-4 text-center">
-        <small className="text-muted">Krok 2/3</small>
+        <small className="text-muted">
+          Krok {currentConfigIndex + 2}/{configs.length + 1}
+        </small>
       </div>
 
-      <h2 className="mb-4 text-center">Ocena wydajności</h2>
-
       <p className="text-justify">
-        Kliknij wszystkie przyciski i poczekaj, aż zmienią kolor. Zwróć uwagę, który przycisk reagował zbyt wolno i odpowiedz na poniższe pytanie.
+        Otwórz stronę testową i odpowiedz na poniższe pytania.
       </p>
-      <ButtonsWithDelayedAction />
+      <Buttons config={shuffledConfigs[currentConfigIndex]} />
+
       <QuestionBlock
-        question="Od którego przycisku reakcja trwała zbyt wolno?"
-        name="inp"
-        options={["Przycisk 1", "Przycisk 2", "Przycisk 3", "Przycisk 4", "Przycisk 5", "Wszystkie", "Żaden"]}
-        value={answers.inp}
+        question="1. Jak oceniasz szybkość działania strony?"
+        name="speed"
+        options={[
+          "1 - bardzo wolna",
+          "2 - wolna",
+          "3 - raczej wolna",
+          "4 - średnia",
+          "5 - raczej szybka",
+          "6 - szybka",
+          "7 - bardzo szybka"
+        ]}
+        value={answers.speed}
         onChange={handleAnswerChange}
       />
 
-      <p className="text-justify">
-        Kliknij przyciski i poczekaj, aż wszystkie elementy pojawią się na stronie. Zwróć uwagę na szybkość pojawiania się elementów i odpowiedz na pytania poniżej.
-      </p>
-      <Buttons configs={lcpConfigs} />
       <QuestionBlock
-        question="Od której wersji czas ładowania był zbyt długi?"
-        name="lcp"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.lcp}
+        question="2. Jak oceniasz płynność działania strony podczas interakcji?"
+        name="smoothness"
+        options={[
+          "1 - bardzo niepłynna",
+          "2 - niepłynna",
+          "3 - raczej niepłynna",
+          "4 - umiarkowana",
+          "5 - raczej płynna",
+          "6 - płynna",
+          "7 - bardzo płynna"
+        ]}
+        value={answers.smoothness}
         onChange={handleAnswerChange}
       />
 
-      <Buttons configs={fcpConfigs} />
       <QuestionBlock
-        question="Od której wersji strona była zbyt długo pusta?"
-        name="fcp"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.fcp}
-        onChange={handleAnswerChange}
-      />
-
-      <p className="text-justify">
-        Obserwuj ładowanie strony i zwróć uwagę, czy elementy zmieniają swoje położenie. Następnie odpowiedz na pytania poniżej.
-      </p>
-      <Buttons configs={clsConfigs} />
-      <QuestionBlock
-        question="Od której wersji zachowanie było nieakceptowalne?"
-        name="cls"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.cls}
-        onChange={handleAnswerChange}
-      />
-      <Buttons configs={cls2Configs} />
-      <QuestionBlock
-        question="Od której wersji zachowanie było nieakceptowalne?"
-        name="cls2"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.cls2}
-        onChange={handleAnswerChange}
-      />
-
-      <p className="text-justify">
-        Kliknij przycisk i spróbuj wejść w interakcję ze stroną. Zwróć uwagę, czy strona reaguje od razu czy z opóźnieniem, i odpowiedz na poniższe pytanie.
-      </p>
-      <Buttons configs={tbtConfigs} />
-      <QuestionBlock
-        question="Od której wersja strona sprawiała wrażenie zawieszającej się?"
-        name="tbt"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.tbt}
-        onChange={handleAnswerChange}
-      />
-      <Buttons configs={ttiConfigs} />
-      <QuestionBlock
-        question="Od której wersji zachowanie było nieakceptowalne?"
-        name="tti"
-        options={["Test 1", "Test 2", "Test 3", "Test 4", "Test 5", "Wszystkie", "Żadna"]}
-        value={answers.tti}
+        question="3. W jakim stopniu działanie strony było dla Ciebie irytujące?"
+        name="irritation"
+        options={[
+          "1 - bardzo irytujące",
+          "2 - irytujące",
+          "3 - raczej irytujące",
+          "4 - umiarkowanie irytujące",
+          "5 - raczej mało irytujące",
+          "6 - mało irytujące",
+          "7 - wcale nie irytujące"
+        ]}
+        value={answers.irritation}
         onChange={handleAnswerChange}
       />
 
@@ -119,12 +130,9 @@ export default function MetricsSurvey() {
         <button
           className="btn btn-primary btn-lg"
           disabled={!allAnswered}
-          onClick={() => {
-            saveMetricsAnswers(answers);
-            navigate("/porownania");
-          }}
+          onClick={handleNext}
         >
-          Dalej
+          {currentConfigIndex < shuffledConfigs.length - 1 ? "Dalej" : "Zakończ"}
         </button>
       </div>
     </div>
