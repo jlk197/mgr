@@ -71,7 +71,7 @@ export default function MetricsSurvey() {
       </div>
 
       <p className="text-justify">
-        Otwórz stronę testową i odpowiedz na poniższe pytania.
+        Przejdź na stronę testową, zapoznaj się z jej funkcjonalnościami poprzez interakcję, a następnie odpowiedz na poniższe pytania.
       </p>
       <Buttons config={shuffledConfigs[currentConfigIndex]} />
 

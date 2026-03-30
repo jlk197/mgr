@@ -74,7 +74,7 @@ export default function Demographics() {
       />
 
       <QuestionBlock
-        question="Z jakiego urządzenia korzystasz?"
+        question="Z jakiego urządzenia korzystasz podczas tego testu?"
         name="device"
         options={[
           "komputer stacjonarny",
