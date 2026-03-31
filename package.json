@@ -7,11 +7,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "export:firebase": "node scripts/exportFirebaseData.cjs",
+    "export:json": "node scripts/exportFirebaseData.cjs --format=json",
+    "export:csv": "node scripts/exportFirebaseData.cjs --format=csv"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",
     "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0"
