@@ -1,6 +1,7 @@
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { SurveyAnswers } from '../utils/surveyStorage';
+import { getFirebaseDocId, saveFirebaseDocId } from '../utils/surveyStorage';
 
 export type FirebaseSurveyData = {
   age: string;
@@ -127,5 +128,61 @@ export const submitSurveyToFirebase = async (surveyAnswers: SurveyAnswers): Prom
     console.error('Error submitting survey to Firebase:', error);
     throw error;
   }
+};
+
+
+export const createOrUpdateSurveyDocument = async (partialData: Partial<FirebaseSurveyData>): Promise<string> => {
+  try {
+    const existingDocId = getFirebaseDocId();
+
+    const dataWithTimestamp = {
+      ...partialData,
+      timestamp: partialData.timestamp || Timestamp.now()
+    };
+
+    if (existingDocId) {
+      const docRef = doc(db, 'survey_responses', existingDocId);
+      await updateDoc(docRef, dataWithTimestamp as any);
+      return existingDocId;
+    } else {
+      const docRef = await addDoc(collection(db, 'survey_responses'), dataWithTimestamp);
+      saveFirebaseDocId(docRef.id);
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error('Error creating/updating survey in Firebase:', error);
+    throw error;
+  }
+};
+
+export const saveDemographicsToFirebase = async (demographics: {
+  age: string;
+  gender: string;
+  device: string;
+  frequency: string;
+}): Promise<string> => {
+  return createOrUpdateSurveyDocument({
+    age: demographics.age,
+    gender: demographics.gender,
+    device: demographics.device,
+    frequency: demographics.frequency,
+  });
+};
+
+export const saveConfigAnswersToFirebase = async (
+  configKey: string,
+  answers: { speed: string; smoothness: string; irritation: string }
+): Promise<string> => {
+  const speedKey = `${configKey}_speed` as keyof FirebaseSurveyData;
+  const smoothnessKey = `${configKey}_smoothness` as keyof FirebaseSurveyData;
+  const irritationKey = `${configKey}_irritation` as keyof FirebaseSurveyData;
+
+  const partialData = {
+    [speedKey]: parseAnswer(answers.speed),
+    [smoothnessKey]: parseAnswer(answers.smoothness),
+    [irritationKey]: parseAnswer(answers.irritation),
+  } as Partial<FirebaseSurveyData>;
+
+  return createOrUpdateSurveyDocument(partialData);
 };
 

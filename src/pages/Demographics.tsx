@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import QuestionBlock from "../components/QuestionBlock";
 import { getSurveyAnswers, saveDemographicsAnswers } from "../utils/surveyStorage";
+import { saveDemographicsToFirebase } from "../firebase/surveyService";
 import { configs } from "../ParamsConfig";
 
 export default function Demographics() {
@@ -19,8 +20,15 @@ export default function Demographics() {
     setAnswers(savedAnswers.demographics);
   }, []);
 
-  const handleAnswerChange = (name: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [name]: value }));
+  const handleAnswerChange = async (name: string, value: string) => {
+    const updatedAnswers = { ...answers, [name]: value };
+    setAnswers(updatedAnswers);
+    saveDemographicsAnswers(updatedAnswers);
+    try {
+      await saveDemographicsToFirebase(updatedAnswers);
+    } catch (error) {
+      console.error('Error saving demographics to Firebase:', error);
+    }
   };
 
   const allAnswered = Object.values(answers).every((ans) => ans !== "");
@@ -93,8 +101,13 @@ export default function Demographics() {
         <button
           className="btn btn-primary btn-lg"
           disabled={!allAnswered}
-          onClick={() => {
+          onClick={async () => {
             saveDemographicsAnswers(answers);
+            try {
+              await saveDemographicsToFirebase(answers);
+            } catch (error) {
+              console.error('Error saving demographics to Firebase:', error);
+            }
             navigate("/metryki");
           }}
         >

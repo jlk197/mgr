@@ -4,8 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import QuestionBlock from "../components/QuestionBlock";
 import Buttons from "../components/Buttons";
 import { configs } from "../ParamsConfig";
-import { getSurveyAnswers, saveConfigAnswers } from "../utils/surveyStorage";
-import { submitSurveyToFirebase } from "../firebase/surveyService";
+import { saveConfigAnswers } from "../utils/surveyStorage";
+import { saveConfigAnswersToFirebase } from "../firebase/surveyService";
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
@@ -26,13 +26,26 @@ export default function MetricsSurvey() {
     irritation: ""
   });
 
-  // Przewiń do góry strony przy każdej zmianie konfiguracji
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentConfigIndex]);
 
-  const handleAnswerChange = (name: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [name]: value }));
+  const handleAnswerChange = async (name: string, value: string) => {
+    const updatedAnswers = { ...answers, [name]: value };
+    setAnswers(updatedAnswers);
+
+    const allQuestionsAnswered = Object.values(updatedAnswers).every((ans) => ans !== "");
+
+    if (allQuestionsAnswered) {
+      const currentConfig = shuffledConfigs[currentConfigIndex];
+      const configKey = `${currentConfig.metricType}_${currentConfig.speedLevel}`;
+      saveConfigAnswers(configKey, updatedAnswers);
+      try {
+        await saveConfigAnswersToFirebase(configKey, updatedAnswers);
+      } catch (error) {
+        console.error('Error saving config answers to Firebase:', error);
+      }
+    }
   };
 
   const allAnswered = Object.values(answers).every((ans) => ans !== "");
@@ -40,8 +53,12 @@ export default function MetricsSurvey() {
   const handleNext = async () => {
     const currentConfig = shuffledConfigs[currentConfigIndex];
     const configKey = `${currentConfig.metricType}_${currentConfig.speedLevel}`;
-
     saveConfigAnswers(configKey, answers);
+    try {
+      await saveConfigAnswersToFirebase(configKey, answers);
+    } catch (error) {
+      console.error('Error saving config answers to Firebase:', error);
+    }
 
     if (currentConfigIndex < shuffledConfigs.length - 1) {
       setCurrentConfigIndex(currentConfigIndex + 1);
@@ -51,14 +68,7 @@ export default function MetricsSurvey() {
         irritation: ""
       });
     } else {
-      try {
-        const surveyData = getSurveyAnswers();
-        await submitSurveyToFirebase(surveyData);
-        navigate("/dziekuje");
-      } catch (error) {
-        console.error("Error submitting survey:", error);
-        alert("Wystąpił błąd podczas wysyłania ankiety. Spróbuj ponownie.");
-      }
+      navigate("/dziekuje");
     }
   };
 

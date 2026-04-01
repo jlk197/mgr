@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'survey_answers';
+const FIREBASE_DOC_ID_KEY = 'firebase_doc_id';
 
 export type MetricAnswers = {
   speed: string;
@@ -80,5 +81,18 @@ export const saveComparisonAnswers = (answers: SurveyAnswers['comparison']) => {
 
 export const clearSurveyAnswers = () => {
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(FIREBASE_DOC_ID_KEY);
+};
+
+export const getFirebaseDocId = (): string | null => {
+  return localStorage.getItem(FIREBASE_DOC_ID_KEY);
+};
+
+export const saveFirebaseDocId = (docId: string) => {
+  localStorage.setItem(FIREBASE_DOC_ID_KEY, docId);
+};
+
+export const clearFirebaseDocId = () => {
+  localStorage.removeItem(FIREBASE_DOC_ID_KEY);
 };
 
