@@ -1,0 +1,198 @@
+/* TestPage specific styles - disable all hover and active effects for clickable elements */
+
+/* Disable user selection to prevent visual feedback */
+.test-page button,
+.test-page a,
+.test-page .btn {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Remove hover effects from all buttons */
+/* Note: We don't set background-color/color here because buttons with inline styles need to preserve them */
+.test-page button:hover,
+.test-page .btn:hover {
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+/* Remove active/click effects from all buttons */
+.test-page button:active,
+.test-page button:active:focus,
+.test-page .btn:active,
+.test-page .btn:active:focus {
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+/* Preserve the specific background colors for buttons when not hovering */
+.test-page .btn-outline-primary:hover {
+  background-color: transparent !important;
+  border-color: #0d6efd !important;
+  color: #0d6efd !important;
+}
+
+.test-page .btn-primary:hover {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+}
+
+/* Remove active effects for specific button types */
+.test-page .btn-outline-primary:active,
+.test-page .btn-outline-primary:active:focus {
+  background-color: transparent !important;
+  border-color: #0d6efd !important;
+  color: #0d6efd !important;
+  box-shadow: none !important;
+}
+
+.test-page .btn-primary:active,
+.test-page .btn-primary:active:focus {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+/* Remove hover effects from links */
+.test-page a:hover {
+  color: inherit !important;
+  text-decoration: inherit !important;
+}
+
+.test-page .btn-link:hover {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.test-page .btn-link:active,
+.test-page .btn-link:active:focus {
+  color: inherit !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove hover from newsletter button - now has inline styles so handled by generic rules */
+/* Kept for backwards compatibility if needed */
+.test-page .btn-light:hover {
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.test-page .btn-light:active,
+.test-page .btn-light:active:focus {
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Ensure all transitions are disabled on hover and active */
+.test-page button:hover,
+.test-page a:hover,
+.test-page .btn:hover,
+.test-page button:active,
+.test-page a:active,
+.test-page .btn:active {
+  transition: none !important;
+}
+
+/* Remove Bootstrap's default button hover and active effects */
+.test-page .btn:hover,
+.test-page .btn:active {
+  box-shadow: none !important;
+}
+
+.test-page .btn-info:hover,
+.test-page .btn-info:active {
+  background-color: #0dcaf0 !important;
+  border-color: #0dcaf0 !important;
+  box-shadow: none !important;
+}
+
+.test-page .btn-sm:hover,
+.test-page .btn-sm:active {
+  transform: none !important;
+}
+
+/* Specific rules for custom styled buttons (with inline styles) */
+/* These need to preserve their inline background-color even on active state */
+.test-page button[style*="background-color"]:active,
+.test-page button[style*="background-color"]:active:focus {
+  /* We can't override inline styles with CSS, but we can remove Bootstrap's effects */
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+  /* The background-color will remain as defined in inline style */
+}
+
+/* Disable pointer-events during interaction to prevent visual feedback */
+/* This is a workaround to prevent browser's default active state visual feedback */
+.test-page button:active::before,
+.test-page button:active::after {
+  display: none !important;
+}
+
+/* Specific styles for the main action button (Zobacz 7 nawyków) */
+.test-page .btn.px-4:hover,
+.test-page .btn.px-4:active,
+.test-page .btn.px-4:focus {
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Specific styles for the follow button (Obserwuj) */
+.test-page .btn.btn-sm.w-100:hover,
+.test-page .btn.btn-sm.w-100:active,
+.test-page .btn.btn-sm.w-100:focus {
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Generic rule for all buttons with inline background-color */
+.test-page .btn[style*="background-color"]:hover,
+.test-page .btn[style*="background-color"]:hover:focus,
+.test-page button.btn[style*="background-color"]:hover {
+  /* Keep the inline styles, don't let Bootstrap override them */
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border: none !important;
+}
+
+.test-page .btn[style*="background-color"]:active,
+.test-page .btn[style*="background-color"]:active:focus,
+.test-page button.btn[style*="background-color"]:active {
+  /* Keep the inline styles on active state too */
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border: none !important;
+}
+
+
+
+/* Keep focus styles for accessibility */
+.test-page button:focus,
+.test-page button:focus-visible,
+.test-page a:focus,
+.test-page a:focus-visible {
+  outline: 2px solid #0d6efd !important;
+  outline-offset: 2px !important;
+}

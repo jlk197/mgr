@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
+import "./TestPage.css";
 
 const TestPage: React.FC = () => {
   const location = useLocation();
@@ -101,6 +102,7 @@ const TestPage: React.FC = () => {
   );
   const [clickedMain, setClickedMain] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
 
   // TBT tracking state
   const [fcpTime, setFcpTime] = useState<number | null>(null);
@@ -403,6 +405,11 @@ const TestPage: React.FC = () => {
     }
   }, [ttiDelay]);
 
+  // Prevent default active state visual feedback
+  const preventActiveState = (e: React.MouseEvent) => {
+    e.preventDefault();
+  };
+
   const handleClick = (id: string) => {
     // INP
     if (inpDelay > 0) {
@@ -411,9 +418,33 @@ const TestPage: React.FC = () => {
     setClickedButtons((prev) => ({ ...prev, [id]: true }));
   };
 
+  const handleMainButtonClick = () => {
+    // INP
+    if (inpDelay > 0) {
+      blockMainThread(inpDelay);
+    }
+    setClickedMain((p) => !p);
+  };
+
+  const handleFollowClick = () => {
+    // INP
+    if (inpDelay > 0) {
+      blockMainThread(inpDelay);
+    }
+    setIsFollowing(!isFollowing);
+  };
+
+  const handleNewsletterClick = () => {
+    // INP
+    if (inpDelay > 0) {
+      blockMainThread(inpDelay);
+    }
+    setNewsletterSubscribed(true);
+  };
+
 
   return (
-    <div className="min-vh-100" style={{ backgroundColor: "#f8f9fa" }}>
+    <div className="test-page min-vh-100" style={{ backgroundColor: "#f8f9fa" }}>
       {/* FCP: Content is conditionally rendered based on contentVisible
           User sees blank page until contentVisible = true
           This simulates FCP delay for user perception (not Lighthouse) */}
@@ -486,6 +517,7 @@ const TestPage: React.FC = () => {
                     className={`btn ${clickedButtons[btn] ? 'btn-primary' : 'btn-outline-primary'} btn-sm`}
                     style={{ minWidth: 120 }}
                     onClick={() => handleClick(btn)}
+                    onMouseDown={preventActiveState}
                   >
                     {btn === "Zapisz artykuł" && "🔖 "}
                     {btn === "Udostępnij" && "📤 "}
@@ -499,7 +531,8 @@ const TestPage: React.FC = () => {
               <button
                 className="btn px-4"
                 style={{ backgroundColor: "#ff6b6b", color: "white", border: "none" }}
-                onClick={() => setClickedMain((p) => !p)}
+                onClick={handleMainButtonClick}
+                onMouseDown={preventActiveState}
               >
                 {clickedMain ? "Zwiń listę ▲" : "Zobacz 7 nawyków ▼"}
               </button>
@@ -579,7 +612,8 @@ const TestPage: React.FC = () => {
                       color: "white",
                       border: "none"
                     }}
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={handleFollowClick}
+                    onMouseDown={preventActiveState}
                   >
                     {isFollowing ? "Obserwujesz ✓" : "Obserwuj"}
                   </button>
@@ -595,6 +629,7 @@ const TestPage: React.FC = () => {
                       <button
                         className="btn btn-link text-decoration-none text-dark p-0 text-start w-100"
                         onClick={() => handleClick(item)}
+                        onMouseDown={preventActiveState}
                       >
                         <div className="d-flex align-items-start gap-2">
                           <span className="badge bg-primary rounded-circle" style={{ width: 24, height: 24, paddingTop: 4 }}>{idx + 1}</span>
@@ -608,11 +643,22 @@ const TestPage: React.FC = () => {
               </div>
 
               {/* Newsletter */}
-              <div className="text-white rounded p-4 shadow-sm mb-3" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+              <div className="newsletter-box text-white rounded p-4 shadow-sm mb-3" style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
                 <h6 className="fw-bold mb-2">📧 Newsletter</h6>
                 <p className="small mb-3">Otrzymuj inspirujące artykuły o zdrowiu i stylu życia prosto na swoją skrzynkę!</p>
                 <input type="email" className="form-control form-control-sm mb-2" placeholder="Twój email" />
-                <button className="btn btn-light btn-sm w-100">Zapisz się</button>
+                <button
+                  className="btn btn-sm w-100"
+                  style={{
+                    backgroundColor: newsletterSubscribed ? "#28a745" : "#f8f9fa",
+                    color: newsletterSubscribed ? "white" : "#212529",
+                    borderColor: newsletterSubscribed ? "#28a745" : "#f8f9fa"
+                  }}
+                  onClick={handleNewsletterClick}
+                  onMouseDown={preventActiveState}
+                >
+                  {newsletterSubscribed ? "Zapisano! ✓" : "Zapisz się"}
+                </button>
               </div>
             </div>
           </aside>
