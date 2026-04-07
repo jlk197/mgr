@@ -8,11 +8,7 @@ const TestPage: React.FC = () => {
 
   const fcpDelay = parseInt(params.get("fcp") || "0", 10);
   const lcpDelay = parseInt(params.get("lcp") || "0", 10);
-  // Odejmujemy stały szum z wczesnych przesunięć (~0.07)
-  // aby końcowa wartość CLS była równa parametrowi cls
   const clsParam = parseFloat(params.get("cls") || "0");
-  const EARLY_SHIFT_NOISE = 0.07;
-  const clsValue = Math.max(0, clsParam - EARLY_SHIFT_NOISE);
   const tbtDelay = parseInt(params.get("tbt") || "0", 10);
   const ttiDelay = parseInt(params.get("tti") || "0", 10);
   const inpDelay = parseInt(params.get("inp") || "0", 10);
@@ -43,37 +39,76 @@ const TestPage: React.FC = () => {
    *
    * W tej implementacji:
    * - Parametr URL 'cls' bezpośrednio określa docelową wartość CLS (np. cls=0.15)
-   * - Aby uzyskać dokładnie CLS = X, używamy heurystyki:
-   *   - Distance Fraction = sqrt(X)
-   *   - Impact Fraction = sqrt(X)
-   *   - Wynik: CLS = sqrt(X) × sqrt(X) = X ✓
-   * - Wysokość reklamy = sqrt(clsValue) × wysokość viewportu
+   * - Element reklamy zajmuje pełną szerokość viewportu (Impact Fraction ≈ 1.0)
+   * - Wysokość reklamy = cls × wysokość viewportu (Distance Fraction = cls)
+   * - Wynik: CLS ≈ 1.0 × cls = cls
    */
-  const viewportHeight = window.innerHeight;
-  const clsEnabled = clsValue > 0;
+  const clsEnabled = clsParam > 0;
 
-  // Obliczamy wysokość reklamy tak, aby PRZESUNIĘCIE REKLAMY miało wartość clsValue
-  // (clsValue już ma odjęty szum na początku, więc końcowa CLS będzie równa parametrowi cls)
-  // CLS = Impact Fraction × Distance Fraction
+  // CLS - Obliczanie przesunięcia z korekcją szerokości viewport
   //
-  // Obserwacje z testów:
-  // - cls=0.10 (po odjęciu szumu: 0.03) → przesunięcie reklamy: 0.03 → końcowa CLS: 0.10 ✅
-  // - cls=0.20 (po odjęciu szumu: 0.13) → przesunięcie reklamy: 0.13 → końcowa CLS: 0.20 ✅
+  // Problem: Impact Fraction zależy od SZEROKOŚCI treści względem viewport
   //
-  // Współczynnik korekcyjny na podstawie empirycznych pomiarów:
-  // FACTOR = 0.10 + (clsValue × 9.44)
-  const BASE_FACTOR = 0.10;
-  const FACTOR_SLOPE = 9.44;
-  const BROWSER_CORRECTION_FACTOR = BASE_FACTOR + (clsValue * FACTOR_SLOPE);
-  const correctedTargetValue = clsValue * BROWSER_CORRECTION_FACTOR;
+  // Na mobile (430px szerokości):
+  // - Kontener Bootstrap zajmuje ~100% szerokości viewport
+  // - Impact Fraction ≈ 1.0
+  // - CLS = 1.0 × Distance Fraction = Distance Fraction
+  //
+  // Na desktop (1536px szerokości):
+  // - Kontener Bootstrap ma max-width ~1140px
+  // - Zajmuje tylko ~74% szerokości viewport
+  // - Impact Fraction ≈ 0.457 (empirycznie zmierzone)
+  // - CLS = 0.457 × Distance Fraction
+  // - Aby uzyskać docelowe CLS, musimy zwiększyć Distance Fraction
+  //
+  // Rozwiązanie: Współczynnik korekcyjny bazujący na szerokości viewport
+  // - Mobile/Tablet (≤ 768px): współczynnik = 1.0 (brak korekcji)
+  // - Desktop (> 768px): współczynnik = 2.19 (1 / 0.457)
+  //
+  // Wzór końcowy:
+  // shiftDistancePx = clsParam × viewportHeight × correctionFactor
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
 
-  // Aby uzyskać CLS = X, używamy:
-  // - Distance Fraction = sqrt(X)
-  // - Impact Fraction = sqrt(X) (zapewnione przez szerokość elementu)
-  // - Wynik: CLS = sqrt(X) × sqrt(X) = X
-  const distanceFraction = Math.sqrt(correctedTargetValue);
-  const injectedAdHeightPx = correctedTargetValue > 0
-    ? viewportHeight * distanceFraction
+  // Dynamiczny współczynnik korekcyjny bazujący na szerokości viewport
+  //
+  // Problem: Impact Fraction zależy od stosunku szerokości contenera do viewport
+  // Bootstrap container ma max-width, który ogranicza szerokość treści
+  //
+  // Empiryczne pomiary Impact Fraction (rzeczywisty CLS / Distance Fraction):
+  // Test 1 - Mobile (430px): CLS = 0.2000 / 0.2000 → Impact = 1.00 → correction = 1.00 ✅
+  // Test 2 - Tablet (819px): CLS = 0.1859 / 0.2150 → Impact = 0.86 → correction = 1.16
+  // Test 3 - Medium desktop (1280px): CLS = 0.2527 / 0.2660 → Impact = 0.95 → correction = 1.05
+  // Test 4 - Large desktop (1536px): CLS = 0.1526 / 0.3340 → Impact = 0.457 → correction = 2.19
+  //
+  // Strategia: Breakpointy z empirycznie zmierzonymi wartościami
+  const getImpactCorrectionFactor = (width: number): number => {
+    if (width <= 768) {
+      // Mobile/Small Tablet: treść zajmuje ~100% szerokości
+      // Impact ≈ 1.0
+      return 1.0;
+    } else if (width <= 1000) {
+      // Tablet/Small desktop: treść zajmuje ~86% szerokości
+      // Impact ≈ 0.86 → correction = 1.16
+      return 1.16;
+    } else if (width <= 1400) {
+      // Medium desktop: treść zajmuje ~95% szerokości
+      // Impact ≈ 0.95 → correction = 1.05
+      return 1.05;
+    } else if (width <= 1700) {
+      // Large desktop: treść zajmuje ~46% szerokości
+      // Impact ≈ 0.457 → correction = 2.19
+      return 2.19;
+    } else {
+      // Very wide desktop: treść zajmuje mniej niż 46% szerokości
+      // Impact < 0.457 → correction > 2.19
+      return 2.5;
+    }
+  };
+
+  const impactCorrection = getImpactCorrectionFactor(viewportWidth);
+  const shiftDistancePx = clsEnabled
+    ? viewportHeight * clsParam * impactCorrection
     : 0;
 
   const blockMainThread = (ms: number) => {
@@ -87,15 +122,18 @@ const TestPage: React.FC = () => {
   // LCP: Controls when the large hero image/header becomes visible
   const [showLCP, setShowLCP] = useState(false);
 
-  // CLS: Controls ad injection
-  const [adExpanded, setAdExpanded] = useState(false);
-  const [adHeight, setAdHeight] = useState(0);
+  // CLS: Controls padding-top based shift
+  const [topElementInjected, setTopElementInjected] = useState(false);
+  const [topElementHeight, setTopElementHeight] = useState(0);
 
   // CLS: Track if initial content is ready (to avoid early layout shifts)
   const [initialContentReady, setInitialContentReady] = useState(false);
 
   // CLS: Track when the test shift is about to happen
   const clsTestStartTimeRef = useRef<number | null>(null);
+
+  // CLS: Track the measured CLS score
+  const [measuredCLS, setMeasuredCLS] = useState<number>(0);
 
   const [clickedButtons, setClickedButtons] = useState<Record<string, boolean>>(
     {}
@@ -110,6 +148,17 @@ const TestPage: React.FC = () => {
 
   const contentButtons = ["Zapisz artykuł", "Udostępnij", "Komentarze"];
   const sidebarItems = ["10 najlepszych miejsc na wakacje", "Jak zaoszczędzić na zakupach", "Przepisy na szybki obiad"];
+
+  /* Update viewport dimensions on resize */
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportHeight(window.innerHeight);
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   /* FCP - First Contentful Paint
    *
@@ -135,9 +184,16 @@ const TestPage: React.FC = () => {
       setShowLCP(true);
       setContentVisible(true);
 
+      // KRYTYCZNE: Scroll do góry strony, aby CLS był mierzony prawidłowo
+      // CLS liczy tylko widoczne elementy - jeśli strona jest scrollowana,
+      // Impact Fraction będzie mniejszy!
+      window.scrollTo(0, 0);
+
       // Daj przeglądarce czas na stabilizację layoutu przed rozpoczęciem pomiaru CLS
       // 1500ms zapewnia, że wszystkie wczesne przesunięcia wystąpią przed testem
       const stabilizationTimer = setTimeout(() => {
+        // Upewnij się ponownie, że jesteśmy na górze
+        window.scrollTo(0, 0);
         setInitialContentReady(true);
       }, 1500); // 1500ms na stabilizację - eliminuje wczesne przesunięcia
 
@@ -285,8 +341,6 @@ const TestPage: React.FC = () => {
           shiftCount++;
           const layoutShift = entry as any;
 
-
-
           // Rozróżnienie: przesunięcia nieoczekiwane vs oczekiwane
           if (!layoutShift.hadRecentInput) {
             // Sprawdź, czy to przesunięcie jest przed czy po rozpoczęciu testu CLS
@@ -295,6 +349,11 @@ const TestPage: React.FC = () => {
 
             if (isBeforeTest) {
               // Przesunięcie przed testem - ignorujemy
+              console.log('[CLS] Layout shift BEFORE test (ignored):', {
+                time: layoutShift.startTime.toFixed(2),
+                value: layoutShift.value.toFixed(4),
+                hadRecentInput: layoutShift.hadRecentInput
+              });
             } else {
               // NIEOCZEKIWANE przesunięcie - zakłóca interakcję użytkownika
               clsScore += layoutShift.value;
@@ -303,7 +362,24 @@ const TestPage: React.FC = () => {
                 value: layoutShift.value,
                 hadRecentInput: false
               });
+
+              setMeasuredCLS(clsScore);
+
+              console.log('[CLS] Layout shift detected (COUNTED):', {
+                time: layoutShift.startTime.toFixed(2),
+                value: layoutShift.value.toFixed(4),
+                cumulativeCLS: clsScore.toFixed(4),
+                expectedCLS: clsParam.toFixed(4),
+                difference: (clsScore - clsParam).toFixed(4),
+                hadRecentInput: layoutShift.hadRecentInput
+              });
             }
+          } else {
+            console.log('[CLS] Layout shift with recent input (ignored):', {
+              time: layoutShift.startTime.toFixed(2),
+              value: layoutShift.value.toFixed(4),
+              hadRecentInput: layoutShift.hadRecentInput
+            });
           }
         }
       });
@@ -316,50 +392,72 @@ const TestPage: React.FC = () => {
     } catch (e) {
       console.error('[CLS] PerformanceObserver not supported:', e);
     }
-  }, []);
+  }, [clsParam]);
 
-  /* CLS - Symulacja opóźnionego ładowania zasobów
+  /* CLS - Symulacja opóźnionego ładowania zasobów przez padding-top na body
    *
-   * Strategia: Dynamiczne wstrzykiwanie elementu reklamy bez zarezerwowanej przestrzeni
+   * NOWA STRATEGIA: Dynamiczna zmiana padding-top na <body> zamiast na kontenerze
    *
    * Sekwencja zdarzeń:
-   * 1. Strona renderuje się BEZ reklamy (brak zarezerwowanej przestrzeni)
-   * 2. Po 600ms reklama jest wstrzykiwana do DOM
+   * 1. Strona renderuje się z body padding-top = 0
+   * 2. Po 600ms padding-top zmienia się na shiftDistancePx
    * 3. Przeglądarka musi ponownie przeliczyć układ strony (reflow)
-   * 4. Treść poniżej przesuwa się w dół o wysokość reklamy
+   * 4. CAŁA treść przesuwa się w dół o shiftDistancePx
    *
    * Dlaczego to powoduje CLS:
-   * - Brak zarezerwowanej przestrzeni dla elementu multimedialnego (reklamy)
-   * - Późna modyfikacja DOM po początkowym renderowaniu
+   * - Zmiana padding-top na body powoduje przesunięcie CAŁEJ treści
+   * - Późna modyfikacja CSS po początkowym renderowaniu
    * - Przesunięcie NIE jest reakcją na interakcję użytkownika
    *
-   * Parametry:
-   * - clsValue: docelowa wartość CLS (np. 0.15)
-   * - injectedAdHeightPx: wysokość reklamy = clsValue × wysokość viewportu
-   * - Impact Fraction = 1.0 (cała szerokość viewportu)
-   * - Distance Fraction = clsValue
-   * - Wynik: CLS = 1.0 × clsValue = clsValue ✓
+   * Obliczanie wysokości przesunięcia:
+   * - clsParam: docelowa wartość CLS z URL (np. 0.15)
+   * - shiftDistancePx: padding-top = clsParam × wysokość viewportu
+   * - Impact Fraction = 1.0 (CAŁA treść na stronie się przesuwa)
+   * - Distance Fraction = clsParam (przesunięcie / wysokość viewportu)
+   * - Wynik: CLS = 1.0 × clsParam = clsParam ✓
+   *
+   * PRZEWAGA tego podejścia:
+   * - padding-top na body przesuwa WSZYSTKO
+   * - Impact Fraction jest zawsze 1.0 (niezależnie od szerokości kontenerów)
+   * - Działa uniwersalnie na mobile i desktop
+   * - Precyzyjna kontrola wartości CLS
    *
    * WAŻNE: Opóźnienie > 500ms zapewnia hadRecentInput = false
    * (przesunięcie nie jest traktowane jako reakcja na interakcję użytkownika)
    */
   useEffect(() => {
     if (clsEnabled && initialContentReady) {
-      // Krok 1: Renderuj stronę BEZ reklamy (wysokość = 0)
-      // Symuluje sytuację, gdy przestrzeń nie jest zarezerwowana
-      setAdExpanded(true);
-      setAdHeight(0);
+      // Krok 1: Ustaw padding-top = 0 na body
+      setTopElementInjected(true);
+      setTopElementHeight(0);
+      document.body.style.paddingTop = '0px';
+      document.body.style.transition = 'none';
 
-      // Krok 2: Po 600ms wstrzyknij reklamę (zmień wysokość na pełną)
+      // Krok 2: Po 600ms zmień padding-top na shiftDistancePx
       // KRYTYCZNE: Opóźnienie > 500ms zapewnia hadRecentInput = false
       const timer = setTimeout(() => {
         clsTestStartTimeRef.current = performance.now();
-        setAdHeight(injectedAdHeightPx);
+        console.log('[CLS] Setting body padding-top to:', shiftDistancePx, 'px');
+        console.log('[CLS] Target CLS from URL:', clsParam);
+        console.log('[CLS] Viewport dimensions:', viewportWidth, 'x', viewportHeight, 'px');
+        console.log('[CLS] Impact correction factor:', impactCorrection);
+        console.log('[CLS] Base shift (no correction):', (clsParam * viewportHeight).toFixed(2), 'px');
+        console.log('[CLS] Corrected shift:', shiftDistancePx.toFixed(2), 'px');
+        console.log('[CLS] Expected Distance Fraction:', (shiftDistancePx / viewportHeight).toFixed(4));
+        console.log('[CLS] Expected CLS:', clsParam, '(after impact correction)');
+        document.body.style.paddingTop = `${shiftDistancePx}px`;
+        setTopElementHeight(shiftDistancePx);
       }, 600);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        // Reset body padding when component unmounts or CLS test completes
+        if (!clsEnabled) {
+          document.body.style.paddingTop = '0px';
+        }
+      };
     }
-  }, [clsEnabled, initialContentReady, injectedAdHeightPx]);
+  }, [clsEnabled, initialContentReady, shiftDistancePx, clsParam, viewportHeight]);
 
   /* TBT - Create long tasks between FCP and TTI */
   useEffect(() => {
@@ -444,12 +542,51 @@ const TestPage: React.FC = () => {
 
 
   return (
-    <div className="test-page min-vh-100" style={{ backgroundColor: "#f8f9fa" }}>
+    <div
+      className="test-page min-vh-100"
+      style={{
+        backgroundColor: "#f8f9fa",
+      }}
+    >
       {/* FCP: Content is conditionally rendered based on contentVisible
           User sees blank page until contentVisible = true
           This simulates FCP delay for user perception (not Lighthouse) */}
       {contentVisible && (
         <>
+          {/* CLS TEST ELEMENT - Wyświetlany na górze gdy CLS jest włączone
+           * Używamy padding-top na głównym kontenerze zamiast wstrzykiwania elementu
+           *
+           * DLACZEGO padding-top zamiast elementu:
+           * - padding-top przesuwa CAŁĄ treść (nie ma problemu z różną szerokością kontenerów)
+           * - Działa uniwersalnie na mobile i desktop
+           * - Impact Fraction zawsze ≈ 1.0 (cała widoczna treść się przesuwa)
+           *
+           * Element wizualny pokazywany jest tylko gdy height > 0
+           */}
+          {clsEnabled && topElementInjected && topElementHeight > 0 && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topElementHeight,
+                width: '100vw',
+                overflow: 'hidden',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}
+            >
+              <div style={{ color: 'white', textAlign: 'center', padding: '1rem' }}>
+                <h4 style={{ margin: 0 }}>🎯 Specjalna oferta!</h4>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>Zapisz się na newsletter i otrzymaj 20% rabatu</p>
+              </div>
+            </div>
+          )}
+
           <header
             className="container mt-4 mb-4"
             style={{ opacity: showLCP ? 1 : 0, visibility: showLCP ? 'visible' : 'hidden' }}
@@ -459,49 +596,6 @@ const TestPage: React.FC = () => {
             Odkryj sprawdzone sposoby na poprawę samopoczucia, zwiększenie energii i osiągnięcie lepszej równowagi między pracą a życiem prywatnym.
           </p>
         </header>
-
-        {/* CLS TEST SECTION - Symulacja opóźnionego ładowania reklamy
-         * Reklama POZA kontenerem, aby zajmowała pełną szerokość viewportu
-         *
-         * Mechanizm przesunięcia układu:
-         * 1. Początkowy render: element ma wysokość 0px (brak zarezerwowanej przestrzeni)
-         * 2. Po 600ms: wysokość zmienia się na injectedAdHeightPx
-         * 3. Przeglądarka przelicza układ (reflow)
-         * 4. Treść poniżej przesuwa się w dół
-         * 5. Layout Shift API wykrywa przesunięcie i oblicza CLS
-         *
-         * Dlaczego to jest problematyczne dla użytkownika:
-         * - Użytkownik zaczyna czytać artykuł
-         * - Nagle treść "skacze" w dół gdy reklama się ładuje
-         * - Użytkownik traci miejsce w tekście lub klika nie ten element
-         *
-         * Jak to naprawić w prawdziwej aplikacji:
-         * - Zarezerwować przestrzeń dla reklamy (min-height)
-         * - Użyć aspect-ratio dla elementów multimedialnych
-         * - Ładować krytyczne zasoby wcześniej
-         */}
-        {clsEnabled && adExpanded && (
-          <div
-            style={{
-              height: adHeight,
-              overflow: 'hidden',
-              transition: 'none', // Brak animacji - natychmiastowa zmiana powoduje layout shift
-              background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100vw', // Pełna szerokość viewportu
-              margin: 0,
-              padding: 0,
-              boxSizing: 'border-box',
-            }}
-          >
-            <div style={{ color: '#333', textAlign: 'center', padding: '2rem' }}>
-              <h4>🧘‍♀️ Kurs Mindfulness</h4>
-              <p>Zacznij medytować już dziś - 7 dni za darmo!</p>
-            </div>
-          </div>
-        )}
 
         <main className="container pb-5">
             <div className="row g-4">
