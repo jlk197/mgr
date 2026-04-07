@@ -41,46 +41,46 @@ const defaultConfig: TestConfig = {
 
 
 
-const lcpConfigs: Array<TestConfig> = [
-  { ...defaultConfig, lcp: 0, metricType: MetricType.LCP, speedLevel: SpeedLevel.FAST },
-  { ...defaultConfig, lcp: 1000, metricType: MetricType.LCP, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, lcp: 2000, metricType: MetricType.LCP, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, lcp: 3000, metricType: MetricType.LCP, speedLevel: SpeedLevel.VERY_SLOW },
+export const fcpConfigs: Array<TestConfig> = [
+  { ...defaultConfig, fcp: 800, metricType: MetricType.FCP, speedLevel: SpeedLevel.FAST },
+  { ...defaultConfig, fcp: 1500, metricType: MetricType.FCP, speedLevel: SpeedLevel.MEDIUM },
+  { ...defaultConfig, fcp: 2500, metricType: MetricType.FCP, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, fcp: 4000, metricType: MetricType.FCP, speedLevel: SpeedLevel.VERY_SLOW },
 ];
 
-export const fcpConfigs: Array<TestConfig> = [
-  { ...defaultConfig, fcp: 0, metricType: MetricType.FCP, speedLevel: SpeedLevel.FAST },
-  { ...defaultConfig, fcp: 1000, metricType: MetricType.FCP, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, fcp: 2000, metricType: MetricType.FCP, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, fcp: 3000, metricType: MetricType.FCP, speedLevel: SpeedLevel.VERY_SLOW },
+const lcpConfigs: Array<TestConfig> = [
+  { ...defaultConfig, lcp: 1200, metricType: MetricType.LCP, speedLevel: SpeedLevel.FAST },
+  { ...defaultConfig, lcp: 2000, metricType: MetricType.LCP, speedLevel: SpeedLevel.MEDIUM },
+  { ...defaultConfig, lcp: 3500, metricType: MetricType.LCP, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, lcp: 5000, metricType: MetricType.LCP, speedLevel: SpeedLevel.VERY_SLOW },
 ];
 
 const clsConfigs: Array<TestConfig> = [
-  { ...defaultConfig, cls: 0.1, metricType: MetricType.CLS, speedLevel: SpeedLevel.FAST },
-  { ...defaultConfig, cls: 0.2, metricType: MetricType.CLS, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, cls: 0.3, metricType: MetricType.CLS, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, cls: 0.4, metricType: MetricType.CLS, speedLevel: SpeedLevel.VERY_SLOW },
+  { ...defaultConfig, cls: 0.02, metricType: MetricType.CLS, speedLevel: SpeedLevel.FAST },
+  { ...defaultConfig, cls: 0.08, metricType: MetricType.CLS, speedLevel: SpeedLevel.MEDIUM },
+  { ...defaultConfig, cls: 0.18, metricType: MetricType.CLS, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, cls: 0.35, metricType: MetricType.CLS, speedLevel: SpeedLevel.VERY_SLOW },
+];
+
+const inpConfigs: Array<TestConfig> = [
+  { ...defaultConfig, inp: 100, metricType: MetricType.INP, speedLevel: SpeedLevel.FAST },
+  { ...defaultConfig, inp: 200, metricType: MetricType.INP, speedLevel: SpeedLevel.MEDIUM },
+  { ...defaultConfig, inp: 500, metricType: MetricType.INP, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, inp: 1000, metricType: MetricType.INP, speedLevel: SpeedLevel.VERY_SLOW },
 ];
 
 const tbtConfigs: Array<TestConfig> = [
   { ...defaultConfig, tbt: 0, metricType: MetricType.TBT, speedLevel: SpeedLevel.FAST },
   { ...defaultConfig, tbt: 200, metricType: MetricType.TBT, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, tbt: 500, metricType: MetricType.TBT, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, tbt: 800, metricType: MetricType.TBT, speedLevel: SpeedLevel.VERY_SLOW },
+  { ...defaultConfig, tbt: 600, metricType: MetricType.TBT, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, tbt: 1200, metricType: MetricType.TBT, speedLevel: SpeedLevel.VERY_SLOW },
 ];
 
 const ttiConfigs: Array<TestConfig> = [
-  { ...defaultConfig, tti: 0, metricType: MetricType.TTI, speedLevel: SpeedLevel.FAST },
-  { ...defaultConfig, tti: 1000, metricType: MetricType.TTI, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, tti: 2000, metricType: MetricType.TTI, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, tti: 3000, metricType: MetricType.TTI, speedLevel: SpeedLevel.VERY_SLOW },
-];
-
-const inpConfigs: Array<TestConfig> = [
-  { ...defaultConfig, inp: 0, metricType: MetricType.INP, speedLevel: SpeedLevel.FAST },
-  { ...defaultConfig, inp: 100, metricType: MetricType.INP, speedLevel: SpeedLevel.MEDIUM },
-  { ...defaultConfig, inp: 200, metricType: MetricType.INP, speedLevel: SpeedLevel.SLOW },
-  { ...defaultConfig, inp: 300, metricType: MetricType.INP, speedLevel: SpeedLevel.VERY_SLOW },
+  { ...defaultConfig, tti: 1500, metricType: MetricType.TTI, speedLevel: SpeedLevel.FAST },
+  { ...defaultConfig, tti: 3000, metricType: MetricType.TTI, speedLevel: SpeedLevel.MEDIUM },
+  { ...defaultConfig, tti: 5000, metricType: MetricType.TTI, speedLevel: SpeedLevel.SLOW },
+  { ...defaultConfig, tti: 8000, metricType: MetricType.TTI, speedLevel: SpeedLevel.VERY_SLOW },
 ];
 
 export const configs = [...lcpConfigs, ...fcpConfigs, ...clsConfigs, ...tbtConfigs, ...ttiConfigs, ...inpConfigs];

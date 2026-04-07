@@ -25,23 +25,39 @@ export default function MetricsSurvey() {
     smoothness: "",
     irritation: ""
   });
+  const [testPageOpenTime, setTestPageOpenTime] = useState<number | null>(null);
+  const [firstAnswerTime, setFirstAnswerTime] = useState<number | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setTestPageOpenTime(null);
+    setFirstAnswerTime(null);
   }, [currentConfigIndex]);
+
+  const handleTestPageOpen = () => {
+    setTestPageOpenTime(Date.now());
+  };
 
   const handleAnswerChange = async (name: string, value: string) => {
     const updatedAnswers = { ...answers, [name]: value };
     setAnswers(updatedAnswers);
 
+    if (firstAnswerTime === null && Object.values(answers).every((ans) => ans === "")) {
+      setFirstAnswerTime(Date.now());
+    }
+
     const allQuestionsAnswered = Object.values(updatedAnswers).every((ans) => ans !== "");
 
     if (allQuestionsAnswered) {
+      const timestamps = testPageOpenTime && firstAnswerTime
+        ? { testPageOpened: testPageOpenTime, firstAnswer: firstAnswerTime }
+        : null;
+
       const currentConfig = shuffledConfigs[currentConfigIndex];
       const configKey = `${currentConfig.metricType}_${currentConfig.speedLevel}`;
       saveConfigAnswers(configKey, updatedAnswers);
       try {
-        await saveConfigAnswersToFirebase(configKey, updatedAnswers);
+        await saveConfigAnswersToFirebase(configKey, updatedAnswers, timestamps);
       } catch (error) {
         console.error('Error saving config answers to Firebase:', error);
       }
@@ -83,7 +99,10 @@ export default function MetricsSurvey() {
       <p className="text-justify">
         Przejdź na stronę testową, zapoznaj się z jej funkcjonalnościami poprzez interakcję, a następnie odpowiedz na poniższe pytania.
       </p>
-      <Buttons config={shuffledConfigs[currentConfigIndex]} />
+      <Buttons
+        config={shuffledConfigs[currentConfigIndex]}
+        onTestPageOpen={handleTestPageOpen}
+      />
 
       <QuestionBlock
         question="1. Jak oceniasz szybkość działania strony?"

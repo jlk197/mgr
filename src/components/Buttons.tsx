@@ -1,14 +1,18 @@
 import React from "react";
 import type {TestConfig } from "../ParamsConfig";
 
-
 type ButtonsProps = {
   config: TestConfig;
+  onTestPageOpen?: () => void;
 };
 
-const Buttons: React.FC<ButtonsProps> = ({ config }) => {
+const Buttons: React.FC<ButtonsProps> = ({ config, onTestPageOpen }) => {
   const handleClick = () => {
     const { fcp, lcp, cls, tbt, tti, inp } = config;
+
+    if (onTestPageOpen) {
+      onTestPageOpen();
+    }
 
     const url =
       `${window.location.origin}/testpage` +

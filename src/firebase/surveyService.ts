@@ -13,80 +13,128 @@ export type FirebaseSurveyData = {
   FCP_fast_speed: number;
   FCP_fast_smoothness: number;
   FCP_fast_irritation: number;
+  FCP_fast_test_page_opened?: Timestamp;
+  FCP_fast_first_answer?: Timestamp;
   FCP_medium_speed: number;
   FCP_medium_smoothness: number;
   FCP_medium_irritation: number;
+  FCP_medium_test_page_opened?: Timestamp;
+  FCP_medium_first_answer?: Timestamp;
   FCP_slow_speed: number;
   FCP_slow_smoothness: number;
   FCP_slow_irritation: number;
+  FCP_slow_test_page_opened?: Timestamp;
+  FCP_slow_first_answer?: Timestamp;
   FCP_very_slow_speed: number;
   FCP_very_slow_smoothness: number;
   FCP_very_slow_irritation: number;
+  FCP_very_slow_test_page_opened?: Timestamp;
+  FCP_very_slow_first_answer?: Timestamp;
 
   LCP_fast_speed: number;
   LCP_fast_smoothness: number;
   LCP_fast_irritation: number;
+  LCP_fast_test_page_opened?: Timestamp;
+  LCP_fast_first_answer?: Timestamp;
   LCP_medium_speed: number;
   LCP_medium_smoothness: number;
   LCP_medium_irritation: number;
+  LCP_medium_test_page_opened?: Timestamp;
+  LCP_medium_first_answer?: Timestamp;
   LCP_slow_speed: number;
   LCP_slow_smoothness: number;
   LCP_slow_irritation: number;
+  LCP_slow_test_page_opened?: Timestamp;
+  LCP_slow_first_answer?: Timestamp;
   LCP_very_slow_speed: number;
   LCP_very_slow_smoothness: number;
   LCP_very_slow_irritation: number;
+  LCP_very_slow_test_page_opened?: Timestamp;
+  LCP_very_slow_first_answer?: Timestamp;
 
   CLS_fast_speed: number;
   CLS_fast_smoothness: number;
   CLS_fast_irritation: number;
+  CLS_fast_test_page_opened?: Timestamp;
+  CLS_fast_first_answer?: Timestamp;
   CLS_medium_speed: number;
   CLS_medium_smoothness: number;
   CLS_medium_irritation: number;
+  CLS_medium_test_page_opened?: Timestamp;
+  CLS_medium_first_answer?: Timestamp;
   CLS_slow_speed: number;
   CLS_slow_smoothness: number;
   CLS_slow_irritation: number;
+  CLS_slow_test_page_opened?: Timestamp;
+  CLS_slow_first_answer?: Timestamp;
   CLS_very_slow_speed: number;
   CLS_very_slow_smoothness: number;
   CLS_very_slow_irritation: number;
+  CLS_very_slow_test_page_opened?: Timestamp;
+  CLS_very_slow_first_answer?: Timestamp;
 
   TBT_fast_speed: number;
   TBT_fast_smoothness: number;
   TBT_fast_irritation: number;
+  TBT_fast_test_page_opened?: Timestamp;
+  TBT_fast_first_answer?: Timestamp;
   TBT_medium_speed: number;
   TBT_medium_smoothness: number;
   TBT_medium_irritation: number;
+  TBT_medium_test_page_opened?: Timestamp;
+  TBT_medium_first_answer?: Timestamp;
   TBT_slow_speed: number;
   TBT_slow_smoothness: number;
   TBT_slow_irritation: number;
+  TBT_slow_test_page_opened?: Timestamp;
+  TBT_slow_first_answer?: Timestamp;
   TBT_very_slow_speed: number;
   TBT_very_slow_smoothness: number;
   TBT_very_slow_irritation: number;
+  TBT_very_slow_test_page_opened?: Timestamp;
+  TBT_very_slow_first_answer?: Timestamp;
 
   TTI_fast_speed: number;
   TTI_fast_smoothness: number;
   TTI_fast_irritation: number;
+  TTI_fast_test_page_opened?: Timestamp;
+  TTI_fast_first_answer?: Timestamp;
   TTI_medium_speed: number;
   TTI_medium_smoothness: number;
   TTI_medium_irritation: number;
+  TTI_medium_test_page_opened?: Timestamp;
+  TTI_medium_first_answer?: Timestamp;
   TTI_slow_speed: number;
   TTI_slow_smoothness: number;
   TTI_slow_irritation: number;
+  TTI_slow_test_page_opened?: Timestamp;
+  TTI_slow_first_answer?: Timestamp;
   TTI_very_slow_speed: number;
   TTI_very_slow_smoothness: number;
   TTI_very_slow_irritation: number;
+  TTI_very_slow_test_page_opened?: Timestamp;
+  TTI_very_slow_first_answer?: Timestamp;
 
   INP_fast_speed: number;
   INP_fast_smoothness: number;
   INP_fast_irritation: number;
+  INP_fast_test_page_opened?: Timestamp;
+  INP_fast_first_answer?: Timestamp;
   INP_medium_speed: number;
   INP_medium_smoothness: number;
   INP_medium_irritation: number;
+  INP_medium_test_page_opened?: Timestamp;
+  INP_medium_first_answer?: Timestamp;
   INP_slow_speed: number;
   INP_slow_smoothness: number;
   INP_slow_irritation: number;
+  INP_slow_test_page_opened?: Timestamp;
+  INP_slow_first_answer?: Timestamp;
   INP_very_slow_speed: number;
   INP_very_slow_smoothness: number;
   INP_very_slow_irritation: number;
+  INP_very_slow_test_page_opened?: Timestamp;
+  INP_very_slow_first_answer?: Timestamp;
 };
 
 const parseAnswer = (answer: string): number => {
@@ -171,17 +219,25 @@ export const saveDemographicsToFirebase = async (demographics: {
 
 export const saveConfigAnswersToFirebase = async (
   configKey: string,
-  answers: { speed: string; smoothness: string; irritation: string }
+  answers: { speed: string; smoothness: string; irritation: string },
+  timestamps?: { testPageOpened: number; firstAnswer: number } | null
 ): Promise<string> => {
   const speedKey = `${configKey}_speed` as keyof FirebaseSurveyData;
   const smoothnessKey = `${configKey}_smoothness` as keyof FirebaseSurveyData;
   const irritationKey = `${configKey}_irritation` as keyof FirebaseSurveyData;
+  const testPageOpenedKey = `${configKey}_test_page_opened` as keyof FirebaseSurveyData;
+  const firstAnswerKey = `${configKey}_first_answer` as keyof FirebaseSurveyData;
 
   const partialData = {
     [speedKey]: parseAnswer(answers.speed),
     [smoothnessKey]: parseAnswer(answers.smoothness),
     [irritationKey]: parseAnswer(answers.irritation),
   } as Partial<FirebaseSurveyData>;
+
+  if (timestamps) {
+    partialData[testPageOpenedKey] = Timestamp.fromMillis(timestamps.testPageOpened) as any;
+    partialData[firstAnswerKey] = Timestamp.fromMillis(timestamps.firstAnswer) as any;
+  }
 
   return createOrUpdateSurveyDocument(partialData);
 };
